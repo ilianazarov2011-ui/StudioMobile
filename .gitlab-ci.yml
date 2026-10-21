@@ -1,0 +1,159 @@
+# Pipeline: clona narezy/StudioMobile e compila o APK (arm64-v8a)
+# Requisitos do projeto: JDK 17, Android SDK 35, NDK r24 (24.0.8215888),
+# CMake 3.22.1, Python 3 e zstd.
+#
+# O log do Gradle/CMake tem dezenas de milhares de warnings e estoura o limite
+# de 4 MB do GitLab (o erro real some). Por isso o build escreve num arquivo
+# (build.log), mostra só o trecho do erro no job e guarda o log completo como artifact.
+
+stages:
+  - build
+
+variables:
+  STUDIO_REPO: "https://github.com/narezy/StudioMobile.git"
+  STUDIO_BRANCH: "main"
+  ANDROID_HOME: "$CI_PROJECT_DIR/android-sdk"
+  ANDROID_SDK_ROOT: "$CI_PROJECT_DIR/android-sdk"
+  GRADLE_USER_HOME: "$CI_PROJECT_DIR/.gradle-home"
+  CMDLINE_TOOLS_ZIP: "commandlinetools-linux-11076708_latest.zip"
+  GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.jvmargs=-Xmx3g"
+
+default:
+  image: eclipse-temurin:17-jdk-jammy
+  cache:
+    key: studiomobile-android
+    paths:
+      - android-sdk/
+      - .gradle-home/caches/
+      - .gradle-home/wrapper/
+
+.setup: &setup
+  - apt-get update -qq
+  - apt-get install -y -qq --no-install-recommends git curl unzip python3 zstd ca-certificates make
+  # Android command-line tools (só baixa se não estiver no cache)
+  - |
+    if [ ! -x "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" ]; then
+      mkdir -p "$ANDROID_HOME/cmdline-tools"
+      curl -fsSL -o /tmp/cmdtools.zip "https://dl.google.com/android/repository/$CMDLINE_TOOLS_ZIP"
+      unzip -q /tmp/cmdtools.zip -d /tmp/cmdtools
+      mv /tmp/cmdtools/cmdline-tools "$ANDROID_HOME/cmdline-tools/latest"
+    fi
+  - export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"
+  - yes | sdkmanager --licenses > /dev/null || true
+  - sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0" "ndk;24.0.8215888" "cmake;3.22.1" > /dev/null
+
+.prepare_source: &prepare_source
+  # 1) clona o repositório do StudioMobile
+  - rm -rf StudioMobile
+  - git clone --depth 1 --branch "$STUDIO_BRANCH" "$STUDIO_REPO" StudioMobile
+  - cd StudioMobile
+  # 1.1) corrige o crash NPE do StudioOverlay (updateChips() chamado antes de btMouse existir)
+  - |
+    python3 - <<'PY'
+    p = "app/app/src/main/java/cat/narezany/studio/session/StudioOverlay.java"
+    s = open(p).read()
+    a = "            mouseButtons[i] = chip;\n        }\n        updateChips();\n"
+    b = "        makeDraggable(dock, new View[]{btMenu, btKeyboard, btMouse});\n"
+    if a in s and b in s:
+        s = s.replace(a, "            mouseButtons[i] = chip;\n        }\n", 1)
+        s = s.replace(b, b + "        updateChips();\n", 1)
+        open(p, "w").write(s)
+        print("StudioOverlay: NPE fix applied")
+    else:
+        print("StudioOverlay: fix not needed (upstream changed)")
+    PY
+  # 2) clona o Winlator (upstream) + submódulo app
+  - sh tools/fetch_upstream.sh
+  # 3) prepara os assets (reescreve o caminho do rootfs para o pacote cat.narezany.studio)
+  - python3 tools/prepare_assets.py upstream-winlator/app/app/src/main/assets app/app/src/main/assets
+  - echo "sdk.dir=$ANDROID_HOME" > app/local.properties
+
+# Roda o gradle sem inundar o log do job. Uso: GRADLE_TASK=:app:assembleDebug
+.run_gradle: &run_gradle
+  - cd "$CI_PROJECT_DIR/StudioMobile/app"
+  - chmod +x gradlew
+  - |
+    rc=0
+    ./gradlew "$GRADLE_TASK" --console=plain --stacktrace > "$CI_PROJECT_DIR/build.log" 2>&1 || rc=$?
+    echo "gradle exit code: $rc"
+    if [ "$rc" -ne 0 ]; then
+      echo "================ ERRO NO BUILD ================"
+      grep -n -B2 -A25 -E "What went wrong|FAILURE: Build failed|Execution failed for task" "$CI_PROJECT_DIR/build.log" | head -150 || true
+      echo "================ ÚLTIMAS 60 LINHAS ================"
+      tail -n 60 "$CI_PROJECT_DIR/build.log"
+      exit "$rc"
+    fi
+    tail -n 5 "$CI_PROJECT_DIR/build.log"
+
+build_debug:
+  stage: build
+  variables:
+    GRADLE_TASK: ":app:assembleDebug"
+  before_script:
+    - *setup
+  script:
+    - *prepare_source
+    - *run_gradle
+    - mkdir -p "$CI_PROJECT_DIR/out"
+    - cp "$CI_PROJECT_DIR"/StudioMobile/app/app/build/outputs/apk/debug/*.apk "$CI_PROJECT_DIR/out/"
+  artifacts:
+    name: "studiomobile-debug-$CI_COMMIT_SHORT_SHA"
+    when: always
+    paths:
+      - out/*.apk
+      - build.log
+    expire_in: 14 days
+  timeout: 2h
+
+# Release assinado (manual).
+# Opcional: em Settings > CI/CD > Variables (tipo "Variable", desmarque "Protect variable"
+# se rodar fora de branch protegida):
+#   KEYSTORE_B64 (keystore em base64), KEYSTORE_PASSWORD, KEY_ALIAS, KEY_PASSWORD
+# Se KEYSTORE_B64 não existir, o job gera uma keystore temporária (APK instala normalmente,
+# mas a assinatura muda a cada build e não atualiza por cima de outra assinatura).
+build_release:
+  stage: build
+  when: manual
+  variables:
+    GRADLE_TASK: ":app:assembleRelease"
+  before_script:
+    - *setup
+  script:
+    - *prepare_source
+    - |
+      SIGN_DIR="$CI_PROJECT_DIR/StudioMobile/signing"
+      mkdir -p "$SIGN_DIR"
+      KS_PASS="${KEYSTORE_PASSWORD:-android}"
+      KS_ALIAS="${KEY_ALIAS:-studio}"
+      KEY_PASS="${KEY_PASSWORD:-$KS_PASS}"
+      if [ -n "$KEYSTORE_B64" ]; then
+        echo "$KEYSTORE_B64" | base64 -d > "$SIGN_DIR/release.jks" || { echo "ERRO: KEYSTORE_B64 não é base64 válido"; exit 1; }
+        if ! keytool -list -keystore "$SIGN_DIR/release.jks" -storepass "$KS_PASS" -alias "$KS_ALIAS" > /dev/null 2>&1; then
+          echo "ERRO: keystore inválida, ou KEYSTORE_PASSWORD / KEY_ALIAS incorretos."
+          exit 1
+        fi
+        echo "Usando keystore das variáveis do GitLab."
+      else
+        echo "AVISO: KEYSTORE_B64 não definido, gerando keystore temporária."
+        KS_PASS="android"; KS_ALIAS="studio"; KEY_PASS="android"
+        keytool -genkeypair -keystore "$SIGN_DIR/release.jks" -storepass "$KS_PASS" -keypass "$KEY_PASS" \
+          -alias "$KS_ALIAS" -keyalg RSA -keysize 2048 -validity 10000 \
+          -dname "CN=StudioMobile, O=CI, C=BR" > /dev/null
+      fi
+      {
+        echo "storeFile=$SIGN_DIR/release.jks"
+        echo "storePassword=$KS_PASS"
+        echo "keyAlias=$KS_ALIAS"
+        echo "keyPassword=$KEY_PASS"
+      } > "$SIGN_DIR/keystore.properties"
+    - *run_gradle
+    - mkdir -p "$CI_PROJECT_DIR/out"
+    - cp "$CI_PROJECT_DIR"/StudioMobile/app/app/build/outputs/apk/release/*.apk "$CI_PROJECT_DIR/out/"
+  artifacts:
+    name: "studiomobile-release-$CI_COMMIT_SHORT_SHA"
+    when: always
+    paths:
+      - out/*.apk
+      - build.log
+    expire_in: 30 days
+  timeout: 2h

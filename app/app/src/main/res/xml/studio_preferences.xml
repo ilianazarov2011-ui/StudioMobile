@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory
+        app:iconSpaceReserved="false"
+        app:title="@string/studio_pref_display">
+        <ListPreference
+            app:defaultValue="720"
+            app:entries="@array/studio_resolution_entries"
+            app:entryValues="@array/studio_resolution_values"
+            app:iconSpaceReserved="false"
+            app:key="resolution"
+            app:summary="%s"
+            app:title="@string/studio_pref_resolution" />
+        <ListPreference
+            app:defaultValue="96"
+            app:entries="@array/studio_ui_scale_entries"
+            app:entryValues="@array/studio_ui_scale_values"
+            app:iconSpaceReserved="false"
+            app:key="ui_scale"
+            app:summary="%s"
+            app:title="@string/studio_pref_ui_scale" />
+        <SwitchPreferenceCompat
+            app:defaultValue="false"
+            app:iconSpaceReserved="false"
+            app:key="show_fps"
+            app:title="@string/studio_pref_show_fps" />
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        app:iconSpaceReserved="false"
+        app:title="@string/studio_pref_graphics">
+        <ListPreference
+            app:defaultValue="D3D11"
+            app:entries="@array/studio_renderer_entries"
+            app:entryValues="@array/studio_renderer_values"
+            app:iconSpaceReserved="false"
+            app:key="roblox_renderer"
+            app:summary="%s"
+            app:title="@string/studio_pref_renderer" />
+        <ListPreference
+            app:defaultValue="auto"
+            app:entries="@array/studio_driver_entries"
+            app:entryValues="@array/studio_driver_values"
+            app:iconSpaceReserved="false"
+            app:key="graphics_driver_choice"
+            app:summary="%s"
+            app:title="@string/studio_pref_driver" />
+        <ListPreference
+            app:defaultValue="INTERMEDIATE"
+            app:entries="@array/studio_box64_entries"
+            app:entryValues="@array/studio_box64_values"
+            app:iconSpaceReserved="false"
+            app:key="box64_preset_choice"
+            app:summary="%s"
+            app:title="@string/studio_pref_box64" />
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        app:iconSpaceReserved="false"
+        app:title="@string/studio_pref_controls">
+        <ListPreference
+            app:defaultValue="touchpad"
+            app:entries="@array/studio_touch_entries"
+            app:entryValues="@array/studio_touch_values"
+            app:iconSpaceReserved="false"
+            app:key="touch_mode"
+            app:summary="%s"
+            app:title="@string/studio_pref_touch_mode" />
+        <SeekBarPreference
+            android:max="300"
+            app:defaultValue="100"
+            app:iconSpaceReserved="false"
+            app:key="cursor_speed_pct"
+            app:min="30"
+            app:showSeekBarValue="true"
+            app:title="@string/studio_pref_cursor_speed" />
+        <SeekBarPreference
+            android:max="100"
+            app:defaultValue="85"
+            app:iconSpaceReserved="false"
+            app:key="keyboard_opacity"
+            app:min="30"
+            app:showSeekBarValue="true"
+            app:title="@string/studio_pref_kb_opacity" />
+        <SeekBarPreference
+            android:max="140"
+            app:defaultValue="100"
+            app:iconSpaceReserved="false"
+            app:key="keyboard_height"
+            app:min="60"
+            app:showSeekBarValue="true"
+            app:title="@string/studio_pref_kb_height" />
+        <SwitchPreferenceCompat
+            app:defaultValue="true"
+            app:iconSpaceReserved="false"
+            app:key="haptics"
+            app:title="@string/studio_pref_haptics" />
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        app:iconSpaceReserved="false"
+        app:title="@string/studio_pref_appearance">
+        <ListPreference
+            app:defaultValue="system"
+            app:entries="@array/studio_theme_entries"
+            app:entryValues="@array/studio_theme_values"
+            app:iconSpaceReserved="false"
+            app:key="theme_mode"
+            app:summary="%s"
+            app:title="@string/studio_pref_theme" />
+        <SwitchPreferenceCompat
+            app:defaultValue="true"
+            app:iconSpaceReserved="false"
+            app:key="dynamic_color"
+            app:summary="@string/studio_pref_dynamic_summary"
+            app:title="@string/studio_pref_dynamic" />
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        app:iconSpaceReserved="false"
+        app:title="@string/studio_pref_advanced">
+        <Preference
+            app:iconSpaceReserved="false"
+            app:key="storage_access"
+            app:summary="@string/studio_pref_storage_summary"
+            app:title="@string/studio_pref_storage" />
+        <EditTextPreference
+            app:iconSpaceReserved="false"
+            app:key="custom_fflags"
+            app:summary="@string/studio_pref_fflags_summary"
+            app:title="@string/studio_pref_fflags" />
+        <SwitchPreferenceCompat
+            app:defaultValue="false"
+            app:iconSpaceReserved="false"
+            app:key="enable_wine_debug"
+            app:summary="@string/studio_pref_wine_logs_summary"
+            app:title="@string/studio_pref_wine_logs" />
+        <Preference
+            app:iconSpaceReserved="false"
+            app:key="reset_prefix"
+            app:summary="@string/studio_pref_reset_prefix_summary"
+            app:title="@string/studio_pref_reset_prefix" />
+        <Preference
+            app:iconSpaceReserved="false"
+            app:key="reinstall_system"
+            app:summary="@string/studio_pref_reinstall_system_summary"
+            app:title="@string/studio_pref_reinstall_system" />
+        <Preference
+            app:iconSpaceReserved="false"
+            app:key="delete_studio"
+            app:summary="@string/studio_pref_delete_studio_summary"
+            app:title="@string/studio_pref_delete_studio" />
+    </PreferenceCategory>
+</PreferenceScreen>

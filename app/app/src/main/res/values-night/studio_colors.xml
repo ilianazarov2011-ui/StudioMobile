@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="studio_primary">#9ECAFF</color>
+    <color name="studio_on_primary">#003258</color>
+    <color name="studio_primary_container">#00497D</color>
+    <color name="studio_on_primary_container">#D1E4FF</color>
+    <color name="studio_secondary">#BBC7DB</color>
+    <color name="studio_on_secondary">#253140</color>
+    <color name="studio_secondary_container">#3B4858</color>
+    <color name="studio_on_secondary_container">#D7E3F8</color>
+    <color name="studio_tertiary">#D7BEE4</color>
+    <color name="studio_on_tertiary">#3B2948</color>
+    <color name="studio_tertiary_container">#523F5F</color>
+    <color name="studio_on_tertiary_container">#F2DAFF</color>
+    <color name="studio_error">#FFB4AB</color>
+    <color name="studio_on_error">#690005</color>
+    <color name="studio_error_container">#93000A</color>
+    <color name="studio_on_error_container">#FFDAD6</color>
+    <color name="studio_surface">#111416</color>
+    <color name="studio_on_surface">#E2E2E6</color>
+    <color name="studio_surface_variant">#42474E</color>
+    <color name="studio_on_surface_variant">#C3C7CF</color>
+    <color name="studio_outline">#8D9199</color>
+    <color name="studio_outline_variant">#42474E</color>
+    <color name="studio_inverse_surface">#E2E2E6</color>
+    <color name="studio_inverse_on_surface">#2F3033</color>
+    <color name="studio_inverse_primary">#0061A4</color>
+    <color name="studio_surface_dim">#111416</color>
+    <color name="studio_surface_bright">#37393D</color>
+    <color name="studio_surface_container_lowest">#0C0E11</color>
+    <color name="studio_surface_container_low">#1A1C1E</color>
+    <color name="studio_surface_container">#1E2022</color>
+    <color name="studio_surface_container_high">#282A2D</color>
+    <color name="studio_surface_container_highest">#333538</color>
+    <color name="studio_brand">#0B84FF</color>
+</resources>

@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="studio_port_by">Порт от Narezany</string>
+    <string name="studio_about">О приложении</string>
+    <string name="studio_settings">Настройки</string>
+    <string name="studio_download">Скачать Roblox Studio</string>
+    <string name="studio_launch">Запустить Studio</string>
+    <string name="studio_update">Обновить Studio</string>
+    <string name="studio_check_updates">Проверить обновления</string>
+    <string name="studio_cancel">Отмена</string>
+    <string name="studio_retry">Повторить</string>
+    <string name="studio_ok">Понятно</string>
+    <string name="studio_disclaimer">Неофициальный порт, не связан с Roblox Corporation. Roblox и Roblox Studio являются товарными знаками Roblox Corporation.</string>
+
+    <string name="studio_runtime_title">Готовим систему</string>
+    <string name="studio_runtime_text">Распаковываем Wine и Box64. Это один раз.</string>
+    <string name="studio_runtime_progress">Распаковка, %d%%</string>
+    <string name="studio_container_creating">Создаём окружение Windows</string>
+
+    <string name="studio_not_installed_title">Roblox Studio не установлена</string>
+    <string name="studio_not_installed_text">Официальная сборка скачивается с серверов Roblox. Нужно около %1$s свободного места.</string>
+    <string name="studio_installed_title">Roblox Studio %s</string>
+    <string name="studio_installed_text">Установлена, занимает %s</string>
+    <string name="studio_update_title">Есть обновление</string>
+    <string name="studio_update_text">Версия %1$s готова, загрузка около %2$s</string>
+    <string name="studio_checking">Проверяем обновления</string>
+    <string name="studio_up_to_date">Установлена последняя версия</string>
+    <string name="studio_check_failed">Не удалось связаться с серверами Roblox</string>
+
+    <string name="studio_downloading_title">Скачиваем Roblox Studio</string>
+    <string name="studio_download_progress">%1$s из %2$s, %3$s/с</string>
+    <string name="studio_status_preparing">Получаем список файлов</string>
+    <string name="studio_status_downloading">Скачиваем и распаковываем</string>
+    <string name="studio_status_finishing">Завершаем</string>
+
+    <string name="studio_error_title">Что-то пошло не так</string>
+    <string name="studio_error_space">Не хватает места, нужно около %s.</string>
+    <string name="studio_error_generic">%s</string>
+
+    <string name="studio_notification_channel">Установка</string>
+    <string name="studio_notification_runtime">Готовим систему</string>
+    <string name="studio_notification_download">Скачиваем Roblox Studio</string>
+
+    <string name="studio_low_ram_title">Мало памяти</string>
+    <string name="studio_low_ram_text">В телефоне %1$s ОЗУ. Roblox Studio тяжёлая и может закрываться, если памяти меньше 8 ГБ.</string>
+    <string name="studio_launch_failed">Roblox Studio ещё не готова</string>
+
+    <string name="studio_about_title">Roblox Studio Mobile</string>
+    <string name="studio_about_version">Версия %s</string>
+    <string name="studio_about_author">Порт от Narezany</string>
+    <string name="studio_about_text">Запускает Windows-версию Roblox Studio на телефоне через Wine и Box64.</string>
+    <string name="studio_about_credits">Основано на Winlator от brunodev85 (LGPL-2.1), Wine, Box64 от ptitSeb, DXVK, VKD3D, Mesa Turnip и патчах glibc из Termux.</string>
+
+    <string name="studio_session_keyboard">Клавиатура Studio</string>
+    <string name="studio_session_hide_keyboard">Скрыть клавиатуру</string>
+    <string name="studio_session_menu">Меню</string>
+    <string name="studio_session_system_keyboard">Клавиатура телефона</string>
+    <string name="studio_session_mouse">Кнопки мыши</string>
+    <string name="studio_session_exit">Закрыть Studio</string>
+    <string name="studio_session_exit_confirm">Закрыть Roblox Studio? Несохранённая работа пропадёт.</string>
+    <string name="studio_session_task_manager">Диспетчер задач</string>
+    <string name="studio_session_fullscreen">Подогнать под экран</string>
+    <string name="studio_session_touch_mode">Режим касаний</string>
+    <string name="studio_session_touchpad">Тачпад</string>
+    <string name="studio_session_direct">Прямое касание</string>
+    <string name="studio_session_login_hint">Вход откроется в браузере телефона. После входа нажмите кнопку Roblox Studio на странице.</string>
+    <string name="studio_session_login_hint_title">Как войти в аккаунт</string>
+    <string name="studio_kb_studio">Studio</string>
+    <string name="studio_kb_keys">Клавиши</string>
+    <string name="studio_kb_symbols">Символы</string>
+    <string name="studio_kb_abc">ABC</string>
+
+    <string name="studio_pref_display">Экран</string>
+    <string name="studio_pref_resolution">Разрешение</string>
+    <string name="studio_pref_resolution_summary">Высота виртуального экрана, ширина подстраивается под телефон. Чем ниже, тем быстрее.</string>
+    <string name="studio_pref_ui_scale">Масштаб интерфейса</string>
+    <string name="studio_pref_ui_scale_summary">Увеличивает кнопки и текст Windows. Применится при следующем запуске.</string>
+    <string name="studio_pref_show_fps">Показывать FPS</string>
+    <string name="studio_pref_graphics">Графика</string>
+    <string name="studio_pref_renderer">Рендерер Studio</string>
+    <string name="studio_pref_renderer_summary">Применится после переустановки или обновления Studio, либо через свои флаги ниже.</string>
+    <string name="studio_pref_driver">Графический драйвер</string>
+    <string name="studio_pref_driver_summary">Turnip работает на Snapdragon, Vortek везде.</string>
+    <string name="studio_pref_performance">Производительность</string>
+    <string name="studio_pref_box64">Профиль Box64</string>
+    <string name="studio_pref_controls">Управление</string>
+    <string name="studio_pref_touch_mode">Режим касаний</string>
+    <string name="studio_pref_cursor_speed">Скорость курсора</string>
+    <string name="studio_pref_kb_opacity">Прозрачность клавиатуры</string>
+    <string name="studio_pref_kb_height">Высота клавиатуры</string>
+    <string name="studio_pref_haptics">Вибрация при нажатии</string>
+    <string name="studio_pref_appearance">Оформление</string>
+    <string name="studio_pref_theme">Тема</string>
+    <string name="studio_pref_dynamic">Динамические цвета</string>
+    <string name="studio_pref_dynamic_summary">Цвета из обоев на Android 12 и новее.</string>
+    <string name="studio_pref_advanced">Дополнительно</string>
+    <string name="studio_pref_fflags">Свои fast flags</string>
+    <string name="studio_pref_fflags_summary">JSON, записывается в ClientAppSettings.json</string>
+    <string name="studio_pref_fflags_invalid">Это не похоже на JSON</string>
+    <string name="studio_pref_wine_logs">Логи Wine и Box64</string>
+    <string name="studio_pref_wine_logs_summary">Показывает окно логов в сессии</string>
+    <string name="studio_pref_reset_prefix">Сбросить окружение Windows</string>
+    <string name="studio_pref_reset_prefix_summary">Пересоздаёт контейнер Wine. Studio остаётся.</string>
+    <string name="studio_pref_reinstall_system">Переустановить системные файлы</string>
+    <string name="studio_pref_reinstall_system_summary">Заново распаковывает Wine и Box64</string>
+    <string name="studio_pref_delete_studio">Удалить Roblox Studio</string>
+    <string name="studio_pref_delete_studio_summary">Освободит место, потом можно скачать снова</string>
+    <string name="studio_pref_confirm_title">Вы уверены?</string>
+    <string name="studio_pref_storage">Доступ к памяти</string>
+    <string name="studio_pref_storage_summary">Позволяет Studio видеть файлы телефона (D: это Загрузки)</string>
+    <string name="studio_pref_done">Готово</string>
+
+    <string-array name="studio_resolution_entries">
+        <item>Авто, 540p</item>
+        <item>Авто, 720p</item>
+        <item>Авто, 900p</item>
+        <item>Авто, 1080p</item>
+    </string-array>
+    <string-array name="studio_driver_entries">
+        <item>Автоматически</item>
+        <item>Turnip (Snapdragon)</item>
+        <item>Vortek (универсальный)</item>
+    </string-array>
+    <string-array name="studio_box64_entries">
+        <item>Стабильность</item>
+        <item>Совместимость</item>
+        <item>Сбалансированный</item>
+        <item>Производительность</item>
+    </string-array>
+    <string-array name="studio_touch_entries">
+        <item>Тачпад</item>
+        <item>Прямое касание</item>
+    </string-array>
+    <string-array name="studio_theme_entries">
+        <item>Как в системе</item>
+        <item>Светлая</item>
+        <item>Тёмная</item>
+    </string-array>
+</resources>

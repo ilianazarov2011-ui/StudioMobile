@@ -1,0 +1,18 @@
+--- a/app/app/src/main/java/cat/narezany/studio/session/StudioOverlay.java
++++ b/app/app/src/main/java/cat/narezany/studio/session/StudioOverlay.java
+@@ -81,7 +81,6 @@
+             mouseBar.addView(chip, params);
+             mouseButtons[i] = chip;
+         }
+-        updateChips();
+         root.addView(mouseBar, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.TOP | Gravity.END));
+ 
+         dock = new LinearLayout(activity);
+@@ -100,6 +99,7 @@
+         FrameLayout.LayoutParams dockParams = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.TOP | Gravity.START);
+         root.addView(dock, dockParams);
+         makeDraggable(dock, new View[]{btMenu, btKeyboard, btMouse});
++        updateChips();
+ 
+         dock.post(() -> {
+             float x = prefs.getFloat(PREF_DOCK_X, -1);

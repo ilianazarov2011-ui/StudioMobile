@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="studio_port_by">Port by Narezany</string>
+    <string name="studio_about">About</string>
+    <string name="studio_settings">Settings</string>
+    <string name="studio_download">Download Roblox Studio</string>
+    <string name="studio_launch">Launch Studio</string>
+    <string name="studio_update">Update Studio</string>
+    <string name="studio_check_updates">Check for updates</string>
+    <string name="studio_cancel">Cancel</string>
+    <string name="studio_retry">Try again</string>
+    <string name="studio_ok">OK</string>
+    <string name="studio_disclaimer">Unofficial port, not affiliated with Roblox Corporation. Roblox and Roblox Studio are trademarks of Roblox Corporation.</string>
+
+    <string name="studio_runtime_title">Preparing the system</string>
+    <string name="studio_runtime_text">Unpacking Wine and Box64. This happens once.</string>
+    <string name="studio_runtime_progress">Unpacking, %d%%</string>
+    <string name="studio_container_creating">Creating the Windows environment</string>
+
+    <string name="studio_not_installed_title">Roblox Studio is not installed</string>
+    <string name="studio_not_installed_text">The official build is downloaded from Roblox. Needs about %1$s of free space.</string>
+    <string name="studio_installed_title">Roblox Studio %s</string>
+    <string name="studio_installed_text">Installed, %s on disk</string>
+    <string name="studio_update_title">Update available</string>
+    <string name="studio_update_text">Version %1$s is ready, download about %2$s</string>
+    <string name="studio_checking">Checking for updates</string>
+    <string name="studio_up_to_date">You have the latest version</string>
+    <string name="studio_check_failed">Could not reach Roblox servers</string>
+
+    <string name="studio_downloading_title">Downloading Roblox Studio</string>
+    <string name="studio_download_progress">%1$s of %2$s, %3$s/s</string>
+    <string name="studio_status_preparing">Getting the file list</string>
+    <string name="studio_status_downloading">Downloading and unpacking</string>
+    <string name="studio_status_finishing">Finishing</string>
+
+    <string name="studio_error_title">Something went wrong</string>
+    <string name="studio_error_space">Not enough free space, about %s needed.</string>
+    <string name="studio_error_generic">%s</string>
+
+    <string name="studio_notification_channel">Installation</string>
+    <string name="studio_notification_runtime">Preparing the system</string>
+    <string name="studio_notification_download">Downloading Roblox Studio</string>
+
+    <string name="studio_low_ram_title">Low memory</string>
+    <string name="studio_low_ram_text">This phone has %1$s of RAM. Roblox Studio is heavy and may close unexpectedly below 8 GB.</string>
+    <string name="studio_launch_failed">Roblox Studio is not ready yet</string>
+
+    <string name="studio_about_title">Roblox Studio Mobile</string>
+    <string name="studio_about_version">Version %s</string>
+    <string name="studio_about_author">Port by Narezany</string>
+    <string name="studio_about_text">Runs the Windows version of Roblox Studio on your phone through Wine and Box64.</string>
+    <string name="studio_about_credits">Built on Winlator by brunodev85 (LGPL-2.1), Wine, Box64 by ptitSeb, DXVK, VKD3D, Mesa Turnip and the Termux glibc patches.</string>
+    <string name="studio_about_site">narez.xyz</string>
+
+    <!-- Session -->
+    <string name="studio_session_keyboard">Studio keyboard</string>
+    <string name="studio_session_hide_keyboard">Hide keyboard</string>
+    <string name="studio_session_menu">Menu</string>
+    <string name="studio_session_system_keyboard">Phone keyboard</string>
+    <string name="studio_session_mouse">Mouse buttons</string>
+    <string name="studio_session_exit">Close Studio</string>
+    <string name="studio_session_exit_confirm">Close Roblox Studio? Unsaved work will be lost.</string>
+    <string name="studio_session_task_manager">Task manager</string>
+    <string name="studio_session_fullscreen">Fit to screen</string>
+    <string name="studio_session_touch_mode">Touch mode</string>
+    <string name="studio_session_touchpad">Touchpad</string>
+    <string name="studio_session_direct">Direct touch</string>
+    <string name="studio_session_login_hint">Sign in opens your phone browser. After signing in, tap the Roblox Studio button on the page.</string>
+    <string name="studio_session_login_hint_title">How to sign in</string>
+    <string name="studio_kb_studio">Studio</string>
+    <string name="studio_kb_keys">Keys</string>
+    <string name="studio_kb_symbols">Symbols</string>
+    <string name="studio_kb_abc">ABC</string>
+
+    <!-- Settings -->
+    <string name="studio_pref_display">Display</string>
+    <string name="studio_pref_resolution">Resolution</string>
+    <string name="studio_pref_resolution_summary">Height of the virtual screen, the width follows your phone. Lower is faster.</string>
+    <string name="studio_pref_ui_scale">Interface scale</string>
+    <string name="studio_pref_ui_scale_summary">Makes Windows buttons and text bigger. Applies on the next start.</string>
+    <string name="studio_pref_show_fps">Show FPS</string>
+    <string name="studio_pref_graphics">Graphics</string>
+    <string name="studio_pref_renderer">Studio renderer</string>
+    <string name="studio_pref_renderer_summary">Applies after reinstalling or updating Studio, or use custom flags below.</string>
+    <string name="studio_pref_driver">Graphics driver</string>
+    <string name="studio_pref_driver_summary">Turnip works on Snapdragon, Vortek everywhere.</string>
+    <string name="studio_pref_performance">Performance</string>
+    <string name="studio_pref_box64">Box64 profile</string>
+    <string name="studio_pref_controls">Controls</string>
+    <string name="studio_pref_touch_mode">Touch mode</string>
+    <string name="studio_pref_cursor_speed">Cursor speed</string>
+    <string name="studio_pref_kb_opacity">Keyboard opacity</string>
+    <string name="studio_pref_kb_height">Keyboard height</string>
+    <string name="studio_pref_haptics">Vibrate on key press</string>
+    <string name="studio_pref_appearance">Appearance</string>
+    <string name="studio_pref_theme">Theme</string>
+    <string name="studio_pref_dynamic">Dynamic colors</string>
+    <string name="studio_pref_dynamic_summary">Use your wallpaper colors on Android 12 and newer.</string>
+    <string name="studio_pref_advanced">Advanced</string>
+    <string name="studio_pref_fflags">Custom fast flags</string>
+    <string name="studio_pref_fflags_summary">JSON, written to ClientAppSettings.json</string>
+    <string name="studio_pref_fflags_invalid">That is not valid JSON</string>
+    <string name="studio_pref_wine_logs">Wine and Box64 logs</string>
+    <string name="studio_pref_wine_logs_summary">Shows a log window inside the session</string>
+    <string name="studio_pref_reset_prefix">Reset Windows environment</string>
+    <string name="studio_pref_reset_prefix_summary">Recreates the Wine container. Studio is kept.</string>
+    <string name="studio_pref_reinstall_system">Reinstall system files</string>
+    <string name="studio_pref_reinstall_system_summary">Unpacks Wine and Box64 again</string>
+    <string name="studio_pref_delete_studio">Delete Roblox Studio</string>
+    <string name="studio_pref_delete_studio_summary">Frees the space, you can download it again later</string>
+    <string name="studio_pref_confirm_title">Are you sure?</string>
+    <string name="studio_pref_storage">Storage access</string>
+    <string name="studio_pref_storage_summary">Lets Studio see files on your phone (D: is Downloads)</string>
+    <string name="studio_pref_done">Done</string>
+
+    <string-array name="studio_resolution_entries">
+        <item>Auto, 540p</item>
+        <item>Auto, 720p</item>
+        <item>Auto, 900p</item>
+        <item>Auto, 1080p</item>
+    </string-array>
+    <string-array name="studio_resolution_values">
+        <item>540</item>
+        <item>720</item>
+        <item>900</item>
+        <item>1080</item>
+    </string-array>
+    <string-array name="studio_ui_scale_entries">
+        <item>100%</item>
+        <item>125%</item>
+        <item>150%</item>
+        <item>175%</item>
+        <item>200%</item>
+    </string-array>
+    <string-array name="studio_ui_scale_values">
+        <item>96</item>
+        <item>120</item>
+        <item>144</item>
+        <item>168</item>
+        <item>192</item>
+    </string-array>
+    <string-array name="studio_renderer_entries">
+        <item>Direct3D 11 (DXVK)</item>
+        <item>Vulkan</item>
+        <item>OpenGL</item>
+    </string-array>
+    <string-array name="studio_renderer_values">
+        <item>D3D11</item>
+        <item>Vulkan</item>
+        <item>OpenGL</item>
+    </string-array>
+    <string-array name="studio_driver_entries">
+        <item>Automatic</item>
+        <item>Turnip (Snapdragon)</item>
+        <item>Vortek (universal)</item>
+    </string-array>
+    <string-array name="studio_driver_values">
+        <item>auto</item>
+        <item>turnip</item>
+        <item>vortek</item>
+    </string-array>
+    <string-array name="studio_box64_entries">
+        <item>Stability</item>
+        <item>Compatibility</item>
+        <item>Balanced</item>
+        <item>Performance</item>
+    </string-array>
+    <string-array name="studio_box64_values">
+        <item>STABILITY</item>
+        <item>CONSERVATIVE</item>
+        <item>INTERMEDIATE</item>
+        <item>PERFORMANCE</item>
+    </string-array>
+    <string-array name="studio_touch_entries">
+        <item>Touchpad</item>
+        <item>Direct touch</item>
+    </string-array>
+    <string-array name="studio_touch_values">
+        <item>touchpad</item>
+        <item>direct</item>
+    </string-array>
+    <string-array name="studio_theme_entries">
+        <item>Follow system</item>
+        <item>Light</item>
+        <item>Dark</item>
+    </string-array>
+    <string-array name="studio_theme_values">
+        <item>system</item>
+        <item>light</item>
+        <item>dark</item>
+    </string-array>
+</resources>

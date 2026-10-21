@@ -1,0 +1,14 @@
+upstream-winlator/
+work/
+signing/
+app/.gradle/
+app/build/
+app/app/build/
+app/local.properties
+app/app/.cxx/
+# derived from upstream by tools/prepare_assets.py
+app/app/src/main/assets/
+*.apk
+.idea/
+*.hprof
+.gradle/
