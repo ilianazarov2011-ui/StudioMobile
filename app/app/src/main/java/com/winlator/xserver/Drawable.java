@@ -91,6 +91,33 @@ public class Drawable extends XResource {
         this.onDestroyListener = onDestroyListener;
     }
 
+    /** Makes this drawable's own buffer big enough for the whole write, so nothing is dropped. */
+    private void growIfNeeded(int x, int y, int width, int rows, int stride) {
+        if (data == null || useSharedData || texture instanceof GPUImage) return;
+        if (stride <= 0 || width <= 0 || rows <= 0 || x < 0 || y < 0) return;
+        long needed = ((long)(y + rows - 1) * stride + x + width) * 4;
+        if (needed <= data.capacity() || needed > (1 << 29)) return;
+        ByteBuffer bigger = ByteBuffer.allocateDirect((int)needed).order(ByteOrder.LITTLE_ENDIAN);
+        data.rewind();
+        bigger.put(data);
+        bigger.rewind();
+        data = bigger;
+    }
+
+    /**
+     * How many of the requested rows can be touched safely: the native code does no bounds check, and the
+     * real buffer can be smaller than width*height (windows sharing a texture of another size).
+     */
+    private static int fitRows(ByteBuffer buffer, int x, int y, int width, int rows, int stride) {
+        if (buffer == null || stride <= 0 || width <= 0 || rows <= 0 || x < 0 || y < 0) return 0;
+        long pixels = buffer.capacity() / 4;
+        long lastRow = (pixels - x - width) / stride;
+        if (pixels - x - width < 0) return 0;
+        long fit = lastRow - y + 1;
+        if (fit <= 0) return 0;
+        return (int)Math.min(rows, fit);
+    }
+
     public void drawImage(short srcX, short srcY, short dstX, short dstY, short width, short height, byte depth, ByteBuffer data, short totalWidth, short totalHeight) {
         if (this.data == null) return;
 
@@ -103,7 +130,10 @@ public class Drawable extends XResource {
             if ((dstX + width) > this.width) width = (short)((this.width - dstX));
             if ((dstY + height) > this.height) height = (short)((this.height - dstY));
 
-            copyArea(srcX, srcY, dstX, dstY, width, height, totalWidth, this.getStride(), data, this.data);
+            growIfNeeded(dstX, dstY, width, height, this.getStride());
+            int rows = Math.min(fitRows(this.data, dstX, dstY, width, height, this.getStride()),
+                                fitRows(data, srcX, srcY, width, height, totalWidth));
+            if (rows > 0) copyArea(srcX, srcY, dstX, dstY, width, (short)rows, totalWidth, this.getStride(), data, this.data);
         }
 
         this.data.rewind();
@@ -121,7 +151,8 @@ public class Drawable extends XResource {
         if ((x + width) > this.width) width = (short)(this.width - x);
         if ((y + height) > this.height) height = (short)(this.height - y);
 
-        copyArea(x, y, (short)0, (short)0, width, height, this.getStride(), width, this.data, dstData);
+        int rows = fitRows(this.data, x, y, width, height, this.getStride());
+        if (rows > 0) copyArea(x, y, (short)0, (short)0, width, (short)rows, this.getStride(), width, this.data, dstData);
 
         this.data.rewind();
         dstData.rewind();
@@ -140,10 +171,15 @@ public class Drawable extends XResource {
         if ((dstX + width) > this.width) width = (short)(this.width - dstX);
         if ((dstY + height) > this.height) height = (short)(this.height - dstY);
 
-        if (gcFunction == GraphicsContext.Function.COPY) {
-            copyArea(srcX, srcY, dstX, dstY, width, height, drawable.getStride(), this.getStride(), drawable.data, this.data);
+        growIfNeeded(dstX, dstY, width, height, this.getStride());
+        int rows = Math.min(fitRows(this.data, dstX, dstY, width, height, this.getStride()),
+                            fitRows(drawable.data, srcX, srcY, width, height, drawable.getStride()));
+        if (rows > 0) {
+            if (gcFunction == GraphicsContext.Function.COPY) {
+                copyArea(srcX, srcY, dstX, dstY, width, (short)rows, drawable.getStride(), this.getStride(), drawable.data, this.data);
+            }
+            else copyAreaOp(srcX, srcY, dstX, dstY, width, (short)rows, drawable.getStride(), this.getStride(), drawable.data, this.data, gcFunction.ordinal());
         }
-        else copyAreaOp(srcX, srcY, dstX, dstY, width, height, drawable.getStride(), this.getStride(), drawable.data, this.data, gcFunction.ordinal());
 
         this.data.rewind();
         drawable.data.rewind();
@@ -162,7 +198,9 @@ public class Drawable extends XResource {
         if ((x + width) > this.width) width = (short)((this.width - x));
         if ((y + height) > this.height) height = (short)((this.height - y));
 
-        fillRect((short)x, (short)y, (short)width, (short)height, color, this.getStride(), this.data);
+        growIfNeeded(x, y, width, height, this.getStride());
+        int rows = fitRows(this.data, x, y, width, height, this.getStride());
+        if (rows > 0) fillRect((short)x, (short)y, (short)width, (short)rows, color, this.getStride(), this.data);
         this.data.rewind();
         forceUpdate();
     }
