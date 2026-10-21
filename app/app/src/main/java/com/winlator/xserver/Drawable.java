@@ -130,9 +130,12 @@ public class Drawable extends XResource {
             if ((dstX + width) > this.width) width = (short)((this.width - dstX));
             if ((dstY + height) > this.height) height = (short)((this.height - dstY));
 
+            if (this.getStride() > 0 && dstX + width > this.getStride()) width = (short)Math.max(0, this.getStride() - dstX);
+            if (totalWidth > 0 && srcX + width > totalWidth) width = (short)Math.max(0, totalWidth - srcX);
             growIfNeeded(dstX, dstY, width, height, this.getStride());
             int rows = Math.min(fitRows(this.data, dstX, dstY, width, height, this.getStride()),
                                 fitRows(data, srcX, srcY, width, height, totalWidth));
+            if (rows < height) android.util.Log.w("StudioDrawable", "drawImage clamped rows " + height + "->" + rows + " dst=" + dstX + "," + dstY + " w=" + width + " stride=" + this.getStride() + " cap=" + this.data.capacity() + " src=" + data.capacity() + " totalW=" + totalWidth);
             if (rows > 0) copyArea(srcX, srcY, dstX, dstY, width, (short)rows, totalWidth, this.getStride(), data, this.data);
         }
 
@@ -171,9 +174,12 @@ public class Drawable extends XResource {
         if ((dstX + width) > this.width) width = (short)(this.width - dstX);
         if ((dstY + height) > this.height) height = (short)(this.height - dstY);
 
+        if (this.getStride() > 0 && dstX + width > this.getStride()) width = (short)Math.max(0, this.getStride() - dstX);
+        if (drawable.getStride() > 0 && srcX + width > drawable.getStride()) width = (short)Math.max(0, drawable.getStride() - srcX);
         growIfNeeded(dstX, dstY, width, height, this.getStride());
         int rows = Math.min(fitRows(this.data, dstX, dstY, width, height, this.getStride()),
                             fitRows(drawable.data, srcX, srcY, width, height, drawable.getStride()));
+        if (rows < height) android.util.Log.w("StudioDrawable", "copyArea clamped rows " + height + "->" + rows);
         if (rows > 0) {
             if (gcFunction == GraphicsContext.Function.COPY) {
                 copyArea(srcX, srcY, dstX, dstY, width, (short)rows, drawable.getStride(), this.getStride(), drawable.data, this.data);
