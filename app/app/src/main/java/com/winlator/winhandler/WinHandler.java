@@ -77,18 +77,24 @@ public class WinHandler {
 
     public void exec(final String filename, final String parameters) {
         addAction(() -> {
-            sendData.rewind();
-            sendData.put(RequestCodes.EXEC);
-            byte[] filenameBytes = filename.getBytes();
-            sendData.putInt(filenameBytes.length);
-            sendData.put(filenameBytes);
-            if (parameters != null) {
-                byte[] parametersBytes = parameters.getBytes();
-                sendData.putInt(parametersBytes.length);
-                sendData.put(parametersBytes);
+            try {
+                sendData.rewind();
+                sendData.put(RequestCodes.EXEC);
+                byte[] filenameBytes = filename.getBytes();
+                sendData.putInt(filenameBytes.length);
+                sendData.put(filenameBytes);
+                if (parameters != null) {
+                    byte[] parametersBytes = parameters.getBytes();
+                    sendData.putInt(parametersBytes.length);
+                    sendData.put(parametersBytes);
+                }
+                else sendData.putInt(0);
+                sendPacket(CLIENT_PORT);
             }
-            else sendData.putInt(0);
-            sendPacket(CLIENT_PORT);
+            catch (java.nio.BufferOverflowException e) {
+                android.util.Log.e("WinHandler", "exec: command too long for the 256-byte packet, ignored");
+                sendData.clear();
+            }
         });
     }
 

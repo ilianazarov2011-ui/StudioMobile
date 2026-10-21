@@ -352,8 +352,26 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         String url = intent.getStringExtra(StudioLauncher.EXTRA_EXEC_ARGS);
-        if (url != null && studioExePath != null && container != null) {
-            winHandler.exec(WineUtils.unixToDOSPath(studioExePath, container), "\""+url+"\"");
+        if (url != null && studioExePath != null && container != null) execStudioUrl(url);
+    }
+
+    /**
+     * WinHandler packets are fixed at 256 bytes, but roblox-studio-auth URLs are much longer
+     * (BufferOverflowException). Long URLs go through a small .bat inside the container instead.
+     */
+    private void execStudioUrl(String url) {
+        String exe = WineUtils.unixToDOSPath(studioExePath, container);
+        String params = "\""+url+"\"";
+        if (9 + exe.getBytes().length + params.getBytes().length <= 240) {
+            winHandler.exec(exe, params);
+            return;
+        }
+        File dir = new File(container.getRootDir(), ".wine/drive_c/windows/temp");
+        dir.mkdirs();
+        File bat = new File(dir, "studio_auth.bat");
+        String script = "@echo off\r\n\""+exe+"\" \""+url.replace("%", "%%")+"\"\r\n";
+        if (FileUtils.writeString(bat, script)) {
+            winHandler.exec("cmd.exe", "/c C:\\windows\\temp\\studio_auth.bat");
         }
     }
 

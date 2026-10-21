@@ -1,0 +1,90 @@
+diff -ruN a/app/app/src/main/java/cat/narezany/studio/session/StudioOverlay.java b/app/app/src/main/java/cat/narezany/studio/session/StudioOverlay.java
+--- a/app/app/src/main/java/cat/narezany/studio/session/StudioOverlay.java
++++ b/app/app/src/main/java/cat/narezany/studio/session/StudioOverlay.java
+@@ -81,7 +81,6 @@
+             mouseBar.addView(chip, params);
+             mouseButtons[i] = chip;
+         }
+-        updateChips();
+         root.addView(mouseBar, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.TOP | Gravity.END));
+ 
+         dock = new LinearLayout(activity);
+@@ -100,6 +99,7 @@
+         FrameLayout.LayoutParams dockParams = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.TOP | Gravity.START);
+         root.addView(dock, dockParams);
+         makeDraggable(dock, new View[]{btMenu, btKeyboard, btMouse});
++        updateChips();
+ 
+         dock.post(() -> {
+             float x = prefs.getFloat(PREF_DOCK_X, -1);
+diff -ruN a/app/app/src/main/java/com/winlator/XServerDisplayActivity.java b/app/app/src/main/java/com/winlator/XServerDisplayActivity.java
+--- a/app/app/src/main/java/com/winlator/XServerDisplayActivity.java
++++ b/app/app/src/main/java/com/winlator/XServerDisplayActivity.java
+@@ -352,8 +352,26 @@
+     protected void onNewIntent(Intent intent) {
+         super.onNewIntent(intent);
+         String url = intent.getStringExtra(StudioLauncher.EXTRA_EXEC_ARGS);
+-        if (url != null && studioExePath != null && container != null) {
+-            winHandler.exec(WineUtils.unixToDOSPath(studioExePath, container), "\""+url+"\"");
++        if (url != null && studioExePath != null && container != null) execStudioUrl(url);
++    }
++
++    /**
++     * WinHandler packets are fixed at 256 bytes, but roblox-studio-auth URLs are much longer
++     * (BufferOverflowException). Long URLs go through a small .bat inside the container instead.
++     */
++    private void execStudioUrl(String url) {
++        String exe = WineUtils.unixToDOSPath(studioExePath, container);
++        String params = "\""+url+"\"";
++        if (9 + exe.getBytes().length + params.getBytes().length <= 240) {
++            winHandler.exec(exe, params);
++            return;
++        }
++        File dir = new File(container.getRootDir(), ".wine/drive_c/windows/temp");
++        dir.mkdirs();
++        File bat = new File(dir, "studio_auth.bat");
++        String script = "@echo off\r\n\""+exe+"\" \""+url.replace("%", "%%")+"\"\r\n";
++        if (FileUtils.writeString(bat, script)) {
++            winHandler.exec("cmd.exe", "/c C:\\windows\\temp\\studio_auth.bat");
+         }
+     }
+ 
+diff -ruN a/app/app/src/main/java/com/winlator/winhandler/WinHandler.java b/app/app/src/main/java/com/winlator/winhandler/WinHandler.java
+--- a/app/app/src/main/java/com/winlator/winhandler/WinHandler.java
++++ b/app/app/src/main/java/com/winlator/winhandler/WinHandler.java
+@@ -77,18 +77,24 @@
+ 
+     public void exec(final String filename, final String parameters) {
+         addAction(() -> {
+-            sendData.rewind();
+-            sendData.put(RequestCodes.EXEC);
+-            byte[] filenameBytes = filename.getBytes();
+-            sendData.putInt(filenameBytes.length);
+-            sendData.put(filenameBytes);
+-            if (parameters != null) {
+-                byte[] parametersBytes = parameters.getBytes();
+-                sendData.putInt(parametersBytes.length);
+-                sendData.put(parametersBytes);
++            try {
++                sendData.rewind();
++                sendData.put(RequestCodes.EXEC);
++                byte[] filenameBytes = filename.getBytes();
++                sendData.putInt(filenameBytes.length);
++                sendData.put(filenameBytes);
++                if (parameters != null) {
++                    byte[] parametersBytes = parameters.getBytes();
++                    sendData.putInt(parametersBytes.length);
++                    sendData.put(parametersBytes);
++                }
++                else sendData.putInt(0);
++                sendPacket(CLIENT_PORT);
++            }
++            catch (java.nio.BufferOverflowException e) {
++                android.util.Log.e("WinHandler", "exec: command too long for the 256-byte packet, ignored");
++                sendData.clear();
+             }
+-            else sendData.putInt(0);
+-            sendPacket(CLIENT_PORT);
+         });
+     }
+ 

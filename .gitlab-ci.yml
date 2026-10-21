@@ -4,7 +4,7 @@
 #
 # O log do Gradle/CMake tem dezenas de milhares de warnings e estoura o limite
 # de 4 MB do GitLab (o erro real some). Por isso o build escreve num arquivo
-# (build.log), mostra só o trecho do erro no job e guarda o log completo como artifact.
+# (build.log), mostra só o trecho do erro no job e guarda o log completo (build.log.gz) como artifact.
 
 stages:
   - build
@@ -47,20 +47,108 @@ default:
   - rm -rf StudioMobile
   - git clone --depth 1 --branch "$STUDIO_BRANCH" "$STUDIO_REPO" StudioMobile
   - cd StudioMobile
-  # 1.1) corrige o crash NPE do StudioOverlay (updateChips() chamado antes de btMouse existir)
+  # 1.1) correções no código do StudioMobile (idempotentes; ignoram o que o upstream já corrigiu):
+  #   - NPE no StudioOverlay (updateChips antes de btMouse existir)
+  #   - BufferOverflowException ao receber a URL de login (pacote do WinHandler tem só 256 bytes)
   - |
     python3 - <<'PY'
-    p = "app/app/src/main/java/cat/narezany/studio/session/StudioOverlay.java"
-    s = open(p).read()
-    a = "            mouseButtons[i] = chip;\n        }\n        updateChips();\n"
-    b = "        makeDraggable(dock, new View[]{btMenu, btKeyboard, btMouse});\n"
-    if a in s and b in s:
-        s = s.replace(a, "            mouseButtons[i] = chip;\n        }\n", 1)
-        s = s.replace(b, b + "        updateChips();\n", 1)
-        open(p, "w").write(s)
-        print("StudioOverlay: NPE fix applied")
-    else:
-        print("StudioOverlay: fix not needed (upstream changed)")
+    import re
+
+    def patch(path, pairs):
+        # tudo ou nada: só aplica se TODOS os trechos esperados existirem (idempotente)
+        s = open(path).read()
+        if not all(old in s for old, _ in pairs):
+            print("  skipped (already fixed or upstream changed):", path)
+            return
+        for old, new in pairs:
+            s = s.replace(old, new, 1)
+        open(path, "w").write(s)
+        print("  patched:", path)
+
+    J = "app/app/src/main/java/"
+
+    # 1) NPE: updateChips() chamado antes de btMouse existir
+    patch(J + "cat/narezany/studio/session/StudioOverlay.java", [
+        (r'''            mouseButtons[i] = chip;
+            }
+            updateChips();
+    ''', r'''            mouseButtons[i] = chip;
+            }
+    '''),
+        (r'''        makeDraggable(dock, new View[]{btMenu, btKeyboard, btMouse});
+    ''', r'''        makeDraggable(dock, new View[]{btMenu, btKeyboard, btMouse});
+            updateChips();
+    '''),
+    ])
+
+    # 2) BufferOverflowException: URL de login (roblox-studio-auth) maior que o pacote de 256 bytes do WinHandler
+    patch(J + "com/winlator/XServerDisplayActivity.java", [
+        (r'''        if (url != null && studioExePath != null && container != null) {
+                winHandler.exec(WineUtils.unixToDOSPath(studioExePath, container), "\""+url+"\"");
+            }
+        }
+    ''', r'''        if (url != null && studioExePath != null && container != null) execStudioUrl(url);
+        }
+
+        /**
+         * WinHandler packets are fixed at 256 bytes, but roblox-studio-auth URLs are much longer
+         * (BufferOverflowException). Long URLs go through a small .bat inside the container instead.
+         */
+        private void execStudioUrl(String url) {
+            String exe = WineUtils.unixToDOSPath(studioExePath, container);
+            String params = "\""+url+"\"";
+            if (9 + exe.getBytes().length + params.getBytes().length <= 240) {
+                winHandler.exec(exe, params);
+                return;
+            }
+            File dir = new File(container.getRootDir(), ".wine/drive_c/windows/temp");
+            dir.mkdirs();
+            File bat = new File(dir, "studio_auth.bat");
+            String script = "@echo off\r\n\""+exe+"\" \""+url.replace("%", "%%")+"\"\r\n";
+            if (FileUtils.writeString(bat, script)) {
+                winHandler.exec("cmd.exe", "/c C:\\windows\\temp\\studio_auth.bat");
+            }
+        }
+    '''),
+    ])
+
+    patch(J + "com/winlator/winhandler/WinHandler.java", [
+        (r'''        addAction(() -> {
+                sendData.rewind();
+                sendData.put(RequestCodes.EXEC);
+                byte[] filenameBytes = filename.getBytes();
+                sendData.putInt(filenameBytes.length);
+                sendData.put(filenameBytes);
+                if (parameters != null) {
+                    byte[] parametersBytes = parameters.getBytes();
+                    sendData.putInt(parametersBytes.length);
+                    sendData.put(parametersBytes);
+                }
+                else sendData.putInt(0);
+                sendPacket(CLIENT_PORT);
+            });
+    ''', r'''        addAction(() -> {
+                try {
+                    sendData.rewind();
+                    sendData.put(RequestCodes.EXEC);
+                    byte[] filenameBytes = filename.getBytes();
+                    sendData.putInt(filenameBytes.length);
+                    sendData.put(filenameBytes);
+                    if (parameters != null) {
+                        byte[] parametersBytes = parameters.getBytes();
+                        sendData.putInt(parametersBytes.length);
+                        sendData.put(parametersBytes);
+                    }
+                    else sendData.putInt(0);
+                    sendPacket(CLIENT_PORT);
+                }
+                catch (java.nio.BufferOverflowException e) {
+                    android.util.Log.e("WinHandler", "exec: command too long for the 256-byte packet, ignored");
+                    sendData.clear();
+                }
+            });
+    '''),
+    ])
     PY
   # 2) clona o Winlator (upstream) + submódulo app
   - sh tools/fetch_upstream.sh
@@ -85,10 +173,31 @@ default:
     fi
     tail -n 5 "$CI_PROJECT_DIR/build.log"
 
+# Confere o APK (zip válido + assinatura) e envia para o Package Registry do projeto.
+# Link direto do .apk (sem zip): Deploy > Package registry > studiomobile.
+# Uso: APK_LABEL=debug|release
+.publish_apk: &publish_apk
+  - |
+    cd "$CI_PROJECT_DIR/out"
+    APK="$(ls -1 *.apk | head -n 1)"
+    [ -n "$APK" ] || { echo "ERRO: nenhum APK gerado"; exit 1; }
+    mv "$APK" "StudioMobile-$APK_LABEL.apk"
+    APK="StudioMobile-$APK_LABEL.apk"
+    ls -l "$APK"
+    sha256sum "$APK"
+    unzip -tq "$APK" > /dev/null && echo "APK: estrutura zip OK"
+    "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --print-certs "$APK" | head -n 3 || echo "AVISO: apksigner não validou a assinatura"
+    curl --fail --silent --show-error --header "JOB-TOKEN: $CI_JOB_TOKEN" \
+      --upload-file "$APK" \
+      "$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/generic/studiomobile/$CI_COMMIT_SHORT_SHA/$APK" \
+      && echo "Enviado ao Package Registry: studiomobile/$CI_COMMIT_SHORT_SHA/$APK" \
+      || echo "AVISO: upload ao Package Registry falhou (o APK continua nos artifacts)"
+
 build_debug:
   stage: build
   variables:
     GRADLE_TASK: ":app:assembleDebug"
+    APK_LABEL: "debug"
   before_script:
     - *setup
   script:
@@ -96,12 +205,15 @@ build_debug:
     - *run_gradle
     - mkdir -p "$CI_PROJECT_DIR/out"
     - cp "$CI_PROJECT_DIR"/StudioMobile/app/app/build/outputs/apk/debug/*.apk "$CI_PROJECT_DIR/out/"
+    - *publish_apk
+  after_script:
+    - gzip -9 -f "$CI_PROJECT_DIR/build.log" || true
   artifacts:
     name: "studiomobile-debug-$CI_COMMIT_SHORT_SHA"
     when: always
     paths:
       - out/*.apk
-      - build.log
+      - build.log.gz
     expire_in: 14 days
   timeout: 2h
 
@@ -116,6 +228,7 @@ build_release:
   when: manual
   variables:
     GRADLE_TASK: ":app:assembleRelease"
+    APK_LABEL: "release"
   before_script:
     - *setup
   script:
@@ -149,11 +262,14 @@ build_release:
     - *run_gradle
     - mkdir -p "$CI_PROJECT_DIR/out"
     - cp "$CI_PROJECT_DIR"/StudioMobile/app/app/build/outputs/apk/release/*.apk "$CI_PROJECT_DIR/out/"
+    - *publish_apk
+  after_script:
+    - gzip -9 -f "$CI_PROJECT_DIR/build.log" || true
   artifacts:
     name: "studiomobile-release-$CI_COMMIT_SHORT_SHA"
     when: always
     paths:
       - out/*.apk
-      - build.log
+      - build.log.gz
     expire_in: 30 days
   timeout: 2h
