@@ -1,11 +1,17 @@
 package com.winlator.renderer;
 
+import android.os.Handler;
+import android.os.Looper;
+
 import androidx.annotation.Keep;
 
 import com.winlator.xserver.Drawable;
 import com.winlator.xserver.XServer;
 
+import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.ArrayList;
 
 public class GPUImage extends Texture {
     private long hardwareBufferPtr;
@@ -14,6 +20,7 @@ public class GPUImage extends Texture {
     private short stride;
     private boolean locked = false;
     private int nativeHandle;
+    private final ArrayList<WeakReference<Drawable>> users = new ArrayList<>();
 
     static {
         System.loadLibrary("winlator");
@@ -71,13 +78,42 @@ public class GPUImage extends Texture {
         return virtualData;
     }
 
+    /** Registers a drawable whose CPU data aliases this image's mapped memory (see destroy()). */
+    public void addUser(Drawable drawable) {
+        synchronized (users) {
+            for (WeakReference<Drawable> ref : users) if (ref.get() == drawable) return;
+            users.add(new WeakReference<>(drawable));
+        }
+    }
+
     @Override
     public void destroy() {
+        final ByteBuffer mapped = virtualData;
+        final long hardwareBuffer = hardwareBufferPtr;
+        final boolean wasLocked = locked;
+
+        // Other drawables (redirected windows share this image) may still write into the mapped
+        // memory. Detach them first, otherwise the X server thread memcpy()s into freed memory.
+        synchronized (users) {
+            for (WeakReference<Drawable> ref : users) {
+                Drawable user = ref.get();
+                if (user == null || mapped == null || user.getData() != mapped) continue;
+
+                Texture current = user.getTexture();
+                if (current == this) user.setData(null);
+                else if (current instanceof GPUImage) user.setData(((GPUImage)current).getVirtualData());
+                else user.setData(ByteBuffer.allocateDirect(user.width * user.height * 4).order(ByteOrder.LITTLE_ENDIAN));
+            }
+            users.clear();
+        }
+
         destroyImageKHR(imageKHRPtr);
-        destroyHardwareBuffer(hardwareBufferPtr, locked);
         virtualData = null;
         imageKHRPtr = 0;
         hardwareBufferPtr = 0;
+
+        // Free the CPU mapping a little later, so a native copy already in flight can finish.
+        new Handler(Looper.getMainLooper()).postDelayed(() -> destroyHardwareBuffer(hardwareBuffer, wasLocked), 2000);
         super.destroy();
     }
 

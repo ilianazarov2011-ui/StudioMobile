@@ -17,6 +17,18 @@ diff -ruN a/app/app/src/main/java/cat/narezany/studio/session/StudioOverlay.java
  
          dock.post(() -> {
              float x = prefs.getFloat(PREF_DOCK_X, -1);
+diff -ruN a/app/app/src/main/java/com/winlator/SettingsFragment.java b/app/app/src/main/java/com/winlator/SettingsFragment.java
+--- a/app/app/src/main/java/com/winlator/SettingsFragment.java
++++ b/app/app/src/main/java/com/winlator/SettingsFragment.java
+@@ -149,7 +149,7 @@
+         cbEnableBackgroundWakelock.setChecked(preferences.getBoolean("enable_background_wakelock", false));
+ 
+         final CheckBox cbEnableBackgroundProtection = view.findViewById(R.id.CBEnableBackgroundProtection);
+-        cbEnableBackgroundProtection.setChecked(preferences.getBoolean("enable_background_protection", false));
++        cbEnableBackgroundProtection.setChecked(preferences.getBoolean("enable_background_protection", true));
+         cbEnableBackgroundProtection.setOnCheckedChangeListener((buttonView, isChecked) -> {
+             cbEnableBackgroundWakelock.setVisibility(isChecked ? View.VISIBLE : View.GONE);
+             if (!isChecked) cbEnableBackgroundWakelock.setChecked(false);
 diff -ruN a/app/app/src/main/java/com/winlator/XServerDisplayActivity.java b/app/app/src/main/java/com/winlator/XServerDisplayActivity.java
 --- a/app/app/src/main/java/com/winlator/XServerDisplayActivity.java
 +++ b/app/app/src/main/java/com/winlator/XServerDisplayActivity.java
@@ -49,6 +61,138 @@ diff -ruN a/app/app/src/main/java/com/winlator/XServerDisplayActivity.java b/app
          }
      }
  
+diff -ruN a/app/app/src/main/java/com/winlator/container/ContainerManager.java b/app/app/src/main/java/com/winlator/container/ContainerManager.java
+--- a/app/app/src/main/java/com/winlator/container/ContainerManager.java
++++ b/app/app/src/main/java/com/winlator/container/ContainerManager.java
+@@ -44,24 +44,27 @@
+         containers.clear();
+         maxContainerId = 0;
+ 
+-        try {
+-            File[] files = homeDir.listFiles();
+-            if (files != null) {
+-                for (File file : files) {
+-                    if (file.isDirectory()) {
+-                        if (file.getName().startsWith(RootFS.USER+"-")) {
+-                            Container container = new Container(Integer.parseInt(file.getName().replace(RootFS.USER+"-", "")));
+-                            container.setRootDir(new File(homeDir, RootFS.USER+"-"+container.id));
+-                            JSONObject data = new JSONObject(FileUtils.readString(container.getConfigFile()));
+-                            container.loadData(data);
+-                            containers.add(container);
+-                            maxContainerId = Math.max(maxContainerId, container.id);
+-                        }
+-                    }
+-                }
++        File[] files = homeDir.listFiles();
++        if (files == null) return;
++
++        for (File file : files) {
++            if (!file.isDirectory() || !file.getName().startsWith(RootFS.USER+"-")) continue;
++            try {
++                int id = Integer.parseInt(file.getName().replace(RootFS.USER+"-", ""));
++                // Count the id even if the container is broken, so a new one never reuses this folder.
++                maxContainerId = Math.max(maxContainerId, id);
++
++                Container container = new Container(id);
++                container.setRootDir(new File(homeDir, RootFS.USER+"-"+container.id));
++                byte[] config = FileUtils.read(container.getConfigFile());
++                // No config: creation was interrupted or is still running in another thread. Skip it.
++                if (config == null || config.length == 0) continue;
++
++                container.loadData(new JSONObject(new String(config, java.nio.charset.StandardCharsets.UTF_8)));
++                containers.add(container);
+             }
++            catch (JSONException | NumberFormatException e) {}
+         }
+-        catch (JSONException e) {}
+     }
+ 
+     public void activateContainer(Container container) {
+diff -ruN a/app/app/src/main/java/com/winlator/renderer/GPUImage.java b/app/app/src/main/java/com/winlator/renderer/GPUImage.java
+--- a/app/app/src/main/java/com/winlator/renderer/GPUImage.java
++++ b/app/app/src/main/java/com/winlator/renderer/GPUImage.java
+@@ -1,11 +1,17 @@
+ package com.winlator.renderer;
+ 
++import android.os.Handler;
++import android.os.Looper;
++
+ import androidx.annotation.Keep;
+ 
+ import com.winlator.xserver.Drawable;
+ import com.winlator.xserver.XServer;
+ 
++import java.lang.ref.WeakReference;
+ import java.nio.ByteBuffer;
++import java.nio.ByteOrder;
++import java.util.ArrayList;
+ 
+ public class GPUImage extends Texture {
+     private long hardwareBufferPtr;
+@@ -14,6 +20,7 @@
+     private short stride;
+     private boolean locked = false;
+     private int nativeHandle;
++    private final ArrayList<WeakReference<Drawable>> users = new ArrayList<>();
+ 
+     static {
+         System.loadLibrary("winlator");
+@@ -71,13 +78,42 @@
+         return virtualData;
+     }
+ 
++    /** Registers a drawable whose CPU data aliases this image's mapped memory (see destroy()). */
++    public void addUser(Drawable drawable) {
++        synchronized (users) {
++            for (WeakReference<Drawable> ref : users) if (ref.get() == drawable) return;
++            users.add(new WeakReference<>(drawable));
++        }
++    }
++
+     @Override
+     public void destroy() {
++        final ByteBuffer mapped = virtualData;
++        final long hardwareBuffer = hardwareBufferPtr;
++        final boolean wasLocked = locked;
++
++        // Other drawables (redirected windows share this image) may still write into the mapped
++        // memory. Detach them first, otherwise the X server thread memcpy()s into freed memory.
++        synchronized (users) {
++            for (WeakReference<Drawable> ref : users) {
++                Drawable user = ref.get();
++                if (user == null || mapped == null || user.getData() != mapped) continue;
++
++                Texture current = user.getTexture();
++                if (current == this) user.setData(null);
++                else if (current instanceof GPUImage) user.setData(((GPUImage)current).getVirtualData());
++                else user.setData(ByteBuffer.allocateDirect(user.width * user.height * 4).order(ByteOrder.LITTLE_ENDIAN));
++            }
++            users.clear();
++        }
++
+         destroyImageKHR(imageKHRPtr);
+-        destroyHardwareBuffer(hardwareBufferPtr, locked);
+         virtualData = null;
+         imageKHRPtr = 0;
+         hardwareBufferPtr = 0;
++
++        // Free the CPU mapping a little later, so a native copy already in flight can finish.
++        new Handler(Looper.getMainLooper()).postDelayed(() -> destroyHardwareBuffer(hardwareBuffer, wasLocked), 2000);
+         super.destroy();
+     }
+ 
+diff -ruN a/app/app/src/main/java/com/winlator/services/ForegroundService.java b/app/app/src/main/java/com/winlator/services/ForegroundService.java
+--- a/app/app/src/main/java/com/winlator/services/ForegroundService.java
++++ b/app/app/src/main/java/com/winlator/services/ForegroundService.java
+@@ -64,7 +64,7 @@
+         if (ctx == null) return;
+         prefs = PreferenceManager.getDefaultSharedPreferences(ctx.getApplicationContext());
+         if (prefs != null) {
+-            if (!prefs.getBoolean("enable_background_protection", false)) {
++            if (!prefs.getBoolean("enable_background_protection", true)) {
+                 Log.i(TAG, "startSession called with background protection disabled; ignoring");
+                 return;
+             }
 diff -ruN a/app/app/src/main/java/com/winlator/winhandler/WinHandler.java b/app/app/src/main/java/com/winlator/winhandler/WinHandler.java
 --- a/app/app/src/main/java/com/winlator/winhandler/WinHandler.java
 +++ b/app/app/src/main/java/com/winlator/winhandler/WinHandler.java
@@ -86,5 +230,20 @@ diff -ruN a/app/app/src/main/java/com/winlator/winhandler/WinHandler.java b/app/
 -            else sendData.putInt(0);
 -            sendPacket(CLIENT_PORT);
          });
+     }
+ 
+diff -ruN a/app/app/src/main/java/com/winlator/xserver/Drawable.java b/app/app/src/main/java/com/winlator/xserver/Drawable.java
+--- a/app/app/src/main/java/com/winlator/xserver/Drawable.java
++++ b/app/app/src/main/java/com/winlator/xserver/Drawable.java
+@@ -55,7 +55,10 @@
+     }
+ 
+     public void setTexture(Texture texture) {
+-        if (texture instanceof GPUImage) data = ((GPUImage)texture).getVirtualData();
++        if (texture instanceof GPUImage) {
++            data = ((GPUImage)texture).getVirtualData();
++            ((GPUImage)texture).addUser(this);
++        }
+         this.texture = texture;
      }
  

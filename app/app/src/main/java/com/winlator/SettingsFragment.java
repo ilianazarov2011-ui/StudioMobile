@@ -149,7 +149,7 @@ public class SettingsFragment extends Fragment {
         cbEnableBackgroundWakelock.setChecked(preferences.getBoolean("enable_background_wakelock", false));
 
         final CheckBox cbEnableBackgroundProtection = view.findViewById(R.id.CBEnableBackgroundProtection);
-        cbEnableBackgroundProtection.setChecked(preferences.getBoolean("enable_background_protection", false));
+        cbEnableBackgroundProtection.setChecked(preferences.getBoolean("enable_background_protection", true));
         cbEnableBackgroundProtection.setOnCheckedChangeListener((buttonView, isChecked) -> {
             cbEnableBackgroundWakelock.setVisibility(isChecked ? View.VISIBLE : View.GONE);
             if (!isChecked) cbEnableBackgroundWakelock.setChecked(false);

@@ -64,7 +64,7 @@ public class ForegroundService extends Service {
         if (ctx == null) return;
         prefs = PreferenceManager.getDefaultSharedPreferences(ctx.getApplicationContext());
         if (prefs != null) {
-            if (!prefs.getBoolean("enable_background_protection", false)) {
+            if (!prefs.getBoolean("enable_background_protection", true)) {
                 Log.i(TAG, "startSession called with background protection disabled; ignoring");
                 return;
             }

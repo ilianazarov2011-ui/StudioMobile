@@ -44,24 +44,27 @@ public class ContainerManager {
         containers.clear();
         maxContainerId = 0;
 
-        try {
-            File[] files = homeDir.listFiles();
-            if (files != null) {
-                for (File file : files) {
-                    if (file.isDirectory()) {
-                        if (file.getName().startsWith(RootFS.USER+"-")) {
-                            Container container = new Container(Integer.parseInt(file.getName().replace(RootFS.USER+"-", "")));
-                            container.setRootDir(new File(homeDir, RootFS.USER+"-"+container.id));
-                            JSONObject data = new JSONObject(FileUtils.readString(container.getConfigFile()));
-                            container.loadData(data);
-                            containers.add(container);
-                            maxContainerId = Math.max(maxContainerId, container.id);
-                        }
-                    }
-                }
+        File[] files = homeDir.listFiles();
+        if (files == null) return;
+
+        for (File file : files) {
+            if (!file.isDirectory() || !file.getName().startsWith(RootFS.USER+"-")) continue;
+            try {
+                int id = Integer.parseInt(file.getName().replace(RootFS.USER+"-", ""));
+                // Count the id even if the container is broken, so a new one never reuses this folder.
+                maxContainerId = Math.max(maxContainerId, id);
+
+                Container container = new Container(id);
+                container.setRootDir(new File(homeDir, RootFS.USER+"-"+container.id));
+                byte[] config = FileUtils.read(container.getConfigFile());
+                // No config: creation was interrupted or is still running in another thread. Skip it.
+                if (config == null || config.length == 0) continue;
+
+                container.loadData(new JSONObject(new String(config, java.nio.charset.StandardCharsets.UTF_8)));
+                containers.add(container);
             }
+            catch (JSONException | NumberFormatException e) {}
         }
-        catch (JSONException e) {}
     }
 
     public void activateContainer(Container container) {
